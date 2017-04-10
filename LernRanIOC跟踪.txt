@@ -1,0 +1,82 @@
+1、RepositoryFactory.T.cs
+  case "SqlServer":
+                    return new Repository<T>(DbFactory.Base(connString, DatabaseType.SqlServer));
+
+2、DbFactory.cs
+  return UnityIocHelper.DBInstance.GetService<IDatabase>(new ParameterOverride(
+             "connString", connString), new ParameterOverride(
+             "DbType", DbType1.ToString()));
+3、SqlServerDbContext.cs
+    public SqlServerDbContext(string connString)
+            : base(connString)
+        {
+            this.Configuration.AutoDetectChangesEnabled = false;
+            this.Configuration.ValidateOnSaveEnabled = false;
+            this.Configuration.LazyLoadingEnabled = false;
+            this.Configuration.ProxyCreationEnabled = false;
+        }
+			 
+
+4、UnityIocHelper.cs  
+   public T GetService<T>(string name, params ParameterOverride[] obj)
+        {
+           
+            var temp = _container.Resolve<T>(name, obj);
+            return temp;  执行后就出错了
+        }
+		
+		
+		
+5、Database.cs
+    public Database(string connString, string DbType)
+        {
+            
+                dbcontext = (DbContext)UnityIocHelper.DBInstance.GetService<IDbContext>(DbType, new ParameterOverride(
+                           "connString", connString), new ParameterOverride(
+             "DbType", DbType));
+            
+
+        }
+		
+6、UnityIocHelper.cs
+   public T GetService<T>(params ParameterOverride[] obj)
+        {
+            var temp= _container.Resolve<T>(obj);
+            return temp;
+        }
+7、DbFactory.cs
+    public static IDatabase Base(string connString, DatabaseType DbType1)
+        {
+            DbHelper.DbType = (DatabaseType)Enum.Parse(typeof(DatabaseType), UnityIocHelper.GetmapToByName("DBcontainer", "IDbContext"));
+            return UnityIocHelper.DBInstance.GetService<IDatabase>(new ParameterOverride(
+             "connString", connString), new ParameterOverride(
+             "DbType", DbType1.ToString()));
+	    }
+
+
+8、RepositoryFactory.T.cs
+  case "SqlServer":
+                    return new Repository<T>(DbFactory.Base(connString, DatabaseType.SqlServer));
+
+9、Repository.T.cs
+   public Repository(IDatabase idatabase)
+        {
+            this.db = idatabase;
+        }
+
+10、RepositoryFactory.T.cs
+  case "SqlServer":
+                    return new Repository<T>(DbFactory.Base(connString, DatabaseType.SqlServer));
+11、ayxzfService.cs
+   public IEnumerable<ayxzfEntity> GetPageList(Pagination pagination, string queryJson)
+        {
+            return this.BaseRepository(DBConStr, DBType).FindList(pagination);
+        }
+12、SqlServerDbContext.cs
+     protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            string assembleFileName = Assembly.GetExecutingAssembly().CodeBase.Replace("LeaRun.Data.EF.DLL", "LeaRun.Application.Mapping.dll").Replace("file:///", "");
+            Assembly asm = Assembly.LoadFile(assembleFileName);
+		}
+13、Database.cs
+   public IEnumerable<T> FindList<T>(string orderField, bool isAsc, int pageSize, int pageIndex, out int total) where T : class,new()
